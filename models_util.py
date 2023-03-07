@@ -36,7 +36,7 @@ class FasterRCNN(pl.LightningModule):
     output = self.forward(x, targets)
     # compute cumulative loss
     loss = sum(loss for loss in output.values())
-    self.log('train_loss', loss)
+    self.log('train_loss', loss, prog_bar=True, logger=True, sync_dist=True)
     return {'loss': loss}
   
   def validation_step(self, batch, batch_idx):
@@ -49,7 +49,7 @@ class FasterRCNN(pl.LightningModule):
       self.model.train()
       output = self(x, targets)
       loss = sum(loss for loss in output.values())
-      self.log('val_loss', loss)
+      self.log('val_loss', loss, prog_bar=True, logger=True, sync_dist=True)
     # in inference mode, get post-processed predictions 
     with torch.no_grad():
       self.model.eval()
@@ -59,7 +59,7 @@ class FasterRCNN(pl.LightningModule):
       # compute mAP for each batch
       self.mAP.update(output, targets)
       mAP = self.mAP.compute()['map']
-    self.log('mAP', mAP, on_step=True, on_epoch=True)
+    self.log('mAP', mAP, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
     return {'loss': loss, 'mAP': mAP}
   
   def testing_step(self, batch, batch_idx):
@@ -73,7 +73,7 @@ class FasterRCNN(pl.LightningModule):
     # compute mAP for each batch
     self.mAP.update(output, targets)
     mAP = self.mAP.compute()['map']
-    self.log('mAP', mAP, on_step=True, on_epoch=True)
+    self.log('mAP', mAP, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
     return {'mAP': mAP}
   
   def on_train_epoch_start(self):
@@ -83,18 +83,18 @@ class FasterRCNN(pl.LightningModule):
   def training_epoch_end(self, outputs):
     # compute the time taken for each epoch
     epoch_time = time.time() - self.start_time
-    self.log(f'time_epoch_{self.current_epoch}', epoch_time)
+    self.log(f'time_epoch_{self.current_epoch}', epoch_time, prog_bar=True, logger=True, sync_dist=True)
     # record the train epoch loss
     train_loss_epoch = outputs[-1]['loss']
-    self.log(f'train_loss_epoch_{self.current_epoch}', train_loss_epoch)
+    self.log(f'train_loss_epoch_{self.current_epoch}', train_loss_epoch, prog_bar=True, logger=True, sync_dist=True)
   
   def validation_epoch_end(self, outputs):
     # record the validation epoch loss
     val_loss_epoch = outputs[-1]['loss']
     # record the validation map
     map_epoch = outputs[-1]['mAP']
-    self.log(f'val_loss_epoch_{self.current_epoch}', val_loss_epoch)
-    self.log(f'map_epoch_{self.current_epoch}', map_epoch)
+    self.log(f'val_loss_epoch_{self.current_epoch}', val_loss_epoch, prog_bar=True, logger=True, sync_dist=True)
+    self.log(f'map_epoch_{self.current_epoch}', map_epoch, prog_bar=True, logger=True, sync_dist=True)
   
   def configure_optimizers(self):
     # Adam optimiser with customised learning rate

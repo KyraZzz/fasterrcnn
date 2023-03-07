@@ -1,8 +1,11 @@
-from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
 from datasets_util import get_dataloaders, get_datasets
 from models_util import FasterRCNN, FreezeFasterRCNN
+import pytorch_lightning as pl
 import argparse
+import os
+import datetime
 
 def run(args):
     log_dir = os.path.expanduser('~') + "/fasterrcnn/tb_logs"
@@ -52,8 +55,8 @@ def run(args):
     trainer.fit(model, train_dataloader, val_dataloader)
     trainer.test(model, verbose = True, dataloaders = test_dataloader)
 
-if __init__ == "__main__":
-    seed_everything(42)
+if __name__ == "__main__":
+    pl.seed_everything(42)
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_name", type = str, required = True, help = "Task name")
     parser.add_argument("--lr", type = float, default=1e-3, help="Learning rate")

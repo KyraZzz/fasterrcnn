@@ -17,6 +17,6 @@ python3 run.py \
     --task_name "dev-"${model} \
     --model ${model} \
     --log_every_n_steps 20 \
-    --max_epoch 100 \
+    --num_epochs 100 \
     --lr 1e-3 \
     --num_gpu_devices 1
