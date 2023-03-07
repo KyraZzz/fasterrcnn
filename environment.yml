@@ -1,0 +1,4 @@
+name: fasterrcnn-env
+channels:
+  - defaults
+prefix: /jmain02/home/J2AD015/axf03/yxz79-axf03/.conda/envs/fasterrcnn-env
