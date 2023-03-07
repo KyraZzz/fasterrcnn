@@ -52,14 +52,14 @@ class CustomImageDataset(Dataset):
       targets = (torch.tensor([ul_x, ul_y, lr_x, lr_y], dtype=torch.float), torch.tensor([i], dtype=torch.int64))
       return im, targets
 
-
-def get_dataloaders():
-    torch.manual_seed(42)
+def get_datasets():
     meta_csv = pd.read_csv("./gtsrb/Meta.csv")
     train_csv = pd.read_csv("./gtsrb/Train.csv")
     test_csv = pd.read_csv("./gtsrb/Test.csv")
     num_classes = len(np.unique(meta_csv['ClassId']))
+    return meta_csv, train_csv, test_csv, num_classes
 
+def get_dataloaders(train_csv, test_csv):
     dataset = CustomImageDataset(num_classes, train_csv)
     test_data = CustomImageDataset(num_classes, test_csv)
     train_data, val_data = random_split(dataset, [0.8,0.2])
