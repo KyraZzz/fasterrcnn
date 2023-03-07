@@ -5,7 +5,7 @@ from IPython.display import set_matplotlib_formats
 set_matplotlib_formats('svg')
 plt.rc('font', family='DejaVu Serif')
 
-def plot_metrics(trainer):
+def plot_metrics(trainer, filename):
   """ Utility function to visualise the trainer logs
   """
   # gather the logs
@@ -29,7 +29,7 @@ def plot_metrics(trainer):
   ax[0].legend()
   ax[1].legend()
   ax[2].legend()
-  plt.show()
+  plt.savefig(f"{filename}.png")
 
 def plot_metrics_comparison(trainer_list, trainer_name):
   train_loss = [[trainer.callback_metrics[f'train_loss_epoch_{i}'].detach().item() for i in range(trainer.current_epoch)] for trainer in trainer_list]
