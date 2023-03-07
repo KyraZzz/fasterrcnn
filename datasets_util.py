@@ -60,10 +60,11 @@ def get_datasets():
     num_classes = len(np.unique(meta_csv['ClassId']))
     return meta_csv, train_csv, test_csv, num_classes
 
-def get_dataloaders(train_csv, test_csv):
+def get_dataloaders(num_classes, train_csv, test_csv):
     dataset = CustomImageDataset(num_classes, train_csv)
     test_data = CustomImageDataset(num_classes, test_csv)
-    train_data, val_data = random_split(dataset, [0.8,0.2])
+    train_sample_num = int(len(dataset) * 0.8)
+    train_data, val_data = random_split(dataset, [train_sample_num,len(dataset) - train_sample_num], generator=torch.Generator().manual_seed(42))
     train_dataloader = DataLoader(train_data, batch_size=8, shuffle=True, num_workers=4)
     val_dataloader = DataLoader(val_data, batch_size=8, shuffle=False, num_workers=4)
     test_dataloader = DataLoader(test_data, batch_size=8, shuffle=False, num_workers=4)
