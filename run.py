@@ -30,7 +30,7 @@ def run(args):
     # get datasets
     meta_csv, train_csv, test_csv, num_classes = get_datasets()
     # get dataloaders
-    train_dataloader, val_dataloader, test_dataloader = get_dataloaders(train_csv, test_csv)
+    train_dataloader, val_dataloader, test_dataloader = get_dataloaders(num_classes, train_csv, test_csv)
 
     # define the model
     model = None
@@ -42,15 +42,25 @@ def run(args):
         case _:
             raise Exception("Model not supported")
     # define the trainer
-    trainer = pl.Trainer(
-        logger = logger,
-        callbacks = [early_stop_callback,checkpoint_callback],
-        max_epochs = args.num_epochs,
-        log_every_n_steps = args.log_every_n_steps,
-        accelerator = "gpu",
-        devices = args.num_gpu_devices,
-        strategy = "ddp",
-    )
+    if args.num_gpu_devices > 1:
+        trainer = pl.Trainer(
+            logger = logger,
+            callbacks = [early_stop_callback,checkpoint_callback],
+            max_epochs = args.num_epochs,
+            log_every_n_steps = args.log_every_n_steps,
+            accelerator = "gpu",
+            devices = args.num_gpu_devices,
+            strategy = "ddp",
+        )
+    else:
+        trainer = pl.Trainer(
+            logger = logger,
+            callbacks = [early_stop_callback,checkpoint_callback],
+            max_epochs = args.num_epochs,
+            log_every_n_steps = args.log_every_n_steps,
+            accelerator = "gpu",
+            devices = args.num_gpu_devices,
+        )
     # fit the model
     trainer.fit(model, train_dataloader, val_dataloader)
     trainer.test(model, verbose = True, dataloaders = test_dataloader)
