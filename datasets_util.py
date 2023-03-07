@@ -53,9 +53,10 @@ class CustomImageDataset(Dataset):
       return im, targets
 
 def get_datasets():
-    meta_csv = pd.read_csv("./gtsrb/Meta.csv")
-    train_csv = pd.read_csv("./gtsrb/Train.csv")
-    test_csv = pd.read_csv("./gtsrb/Test.csv")
+    path = os.path.expanduser('~') + "/fasterrcnn/gtsrb/"
+    meta_csv = pd.read_csv(path + "Meta.csv")
+    train_csv = pd.read_csv(path + "Train.csv")
+    test_csv = pd.read_csv(path + "Test.csv")
     num_classes = len(np.unique(meta_csv['ClassId']))
     return meta_csv, train_csv, test_csv, num_classes
 
