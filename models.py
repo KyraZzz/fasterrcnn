@@ -102,3 +102,24 @@ class FasterRCNN(pl.LightningModule):
     # linear learning rate scheduler to gradually increase learning rate
     scheduler = LinearLR(optimiser, self.step_size)
     return [optimiser], [scheduler]
+
+# freeze the entire backbone network and train the classification layer from scratch on GTSRB dataset
+class FreezeFasterRCNN(FasterRCNN):
+  """ Freeze the backbone network up to and including K layers
+      where K = freeze_depth, fine-tune the rest layers
+  """
+  def __init__(self, num_classes, freeze_depth=None, lr=1e-3):
+    super().__init__(num_classes, lr)
+    self.model = fasterrcnn_resnet50_fpn(pretrain=True)
+    # freeze the backbone network 
+    self.freeze_depth = freeze_depth
+    if self.freeze_depth is not None:
+      self.freeze_depth = min(freeze_depth, len(self.model.backbone.fpn.inner_blocks))
+      for name, param in self.model.backbone.body.named_parameters():
+        if f'layer{self.freeze_depth+1}' in name:
+          break
+        param.requires_grad = False
+    # get the number of input features 
+    in_features = self.model.roi_heads.box_predictor.cls_score.in_features
+    # define a new head for the detector with required number of classes
+    self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)

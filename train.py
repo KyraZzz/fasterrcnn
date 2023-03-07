@@ -11,14 +11,15 @@ if __init__ == "__main__":
         mode='min'
     )
 
-# define the model
-num_classes = 43
-lr = 1e-3
-num_epochs = 100
-model = FasterRCNN(num_classes, lr)
-# define the log file
-logger = pl_loggers.TensorBoardLogger(save_dir = f'./logs/{now.month}-{now.day}/FasterRCNN/')
-# define the trainer
-trainer = pl.Trainer(max_epochs=num_epochs, accelerator="gpu", devices=1, callbacks= [early_stop_callback], logger=logger)
-# fit the model
-trainer.fit(model, train_dataloader, val_dataloader)
+    # define the model
+    num_classes = 43
+    lr = 1e-3
+    num_epochs = 100
+    model = FasterRCNN(num_classes, lr)
+    # define the log file
+    logger = pl_loggers.TensorBoardLogger(save_dir = f'./logs/{now.month}-{now.day}/FasterRCNN/')
+    # define the trainer
+    trainer = pl.Trainer(max_epochs=num_epochs, accelerator="gpu", devices=1, callbacks= [early_stop_callback], logger=logger)
+    # fit the model
+    trainer.fit(model, train_dataloader, val_dataloader)
+
