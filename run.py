@@ -1,11 +1,12 @@
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import TensorBoardLogger
-from datasets_util import get_dataloaders, get_datasets
-from models_util import FasterRCNN, FreezeFasterRCNN
 import pytorch_lightning as pl
 import argparse
 import os
 import datetime
+from datasets_util import get_dataloaders, get_datasets
+from models_util import FasterRCNN, FreezeFasterRCNN
+from plot_utils import plot_metrics
 
 def run(args):
     log_dir = os.path.expanduser('~') + "/fasterrcnn/tb_logs"
@@ -63,14 +64,16 @@ def run(args):
         )
     # fit the model
     trainer.fit(model, train_dataloader, val_dataloader)
+    image_name = os.path.expanduser('~') + f"/fasterrcnn/images/{now.month}-{now.day}-{args.task_name}"
     trainer.test(model, verbose = True, dataloaders = test_dataloader)
+    plot_metrics(trainer, image_name)
 
 if __name__ == "__main__":
     pl.seed_everything(42)
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_name", type = str, required = True, help = "Task name")
     parser.add_argument("--lr", type = float, default=1e-3, help="Learning rate")
-    parser.add_argument("--num_epochs", type = int, default=100, help="Max number of epochs")
+    parser.add_argument("--num_epochs", type = int, default=10, help="Max number of epochs")
     parser.add_argument("--model", type = str, default="FasterRCNN", help="The model name")
     parser.add_argument("--freeze_depth", type = int, default=None, help="Freeze up to and including i th layer")
     parser.add_argument("--log_every_n_steps", type = int, default=20, help="Log every n steps for logging")

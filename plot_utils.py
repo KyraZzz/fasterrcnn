@@ -29,9 +29,10 @@ def plot_metrics(trainer, filename):
   ax[0].legend()
   ax[1].legend()
   ax[2].legend()
+  plt.savefig(f"{filename}.svg")
   plt.savefig(f"{filename}.png")
 
-def plot_metrics_comparison(trainer_list, trainer_name):
+def plot_metrics_comparison(trainer_list, trainer_name, filename):
   train_loss = [[trainer.callback_metrics[f'train_loss_epoch_{i}'].detach().item() for i in range(trainer.current_epoch)] for trainer in trainer_list]
   val_loss = [[trainer.callback_metrics[f'val_loss_epoch_{i}'].detach().item() for i in range(trainer.current_epoch)] for trainer in trainer_list]
   time_epoch = [[trainer.callback_metrics[f'time_epoch_{i}'].detach().item() for i in range(trainer.current_epoch)] for trainer in trainer_list]
@@ -50,4 +51,5 @@ def plot_metrics_comparison(trainer_list, trainer_name):
   ax[3].set_ylabel('time')
   ax[3].legend(loc='lower center', ncol=3, fancybox=True, bbox_to_anchor=(0.5, -0.9))
   plt.tight_layout()
-  plt.show()
+  plt.savefig(f'{filename}.svg')
+  plt.savefig(f"{filename}.png")
