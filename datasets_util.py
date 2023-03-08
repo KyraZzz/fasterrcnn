@@ -8,6 +8,12 @@ from torchvision.transforms import transforms
 import torch
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
+import pytorch_lightning as pl
+
+import os
+from torch.utils.data import Dataset
+from torchvision.io import read_image
+from torchvision.transforms import transforms
 
 class CustomImageDataset(Dataset):
     """ Dataset wrapper class for the GTSRB dataset
@@ -49,8 +55,58 @@ class CustomImageDataset(Dataset):
       path = os.path.join(self.imgs_path, data['Path'])
       im = Image.open(path)
       im = self.transform(im)
-      targets = (torch.tensor([ul_x, ul_y, lr_x, lr_y], dtype=torch.float), torch.tensor([i], dtype=torch.int64))
+      targets = {"boxes": torch.tensor([[ul_x, ul_y, lr_x, lr_y]], dtype=torch.float), "labels": torch.tensor([i], dtype=torch.int64)}
       return im, targets
+
+class CustomDataModule(pl.LightningDataModule):
+    def __init__(self, train_data, val_data, test_data, batch_size=32):
+        super().__init__()
+        self.train_data = train_data
+        self.val_data = val_data
+        self.test_data = test_data
+        self.batch_size = batch_size
+    
+    def setup(self, stage=None):
+      pass
+
+    def collate_fn(self, data):
+        num_entry = len(data)
+        input = []
+        target = []
+        for idx in range(num_entry):
+            row = data[idx]
+            input.append(row[0])
+            target.append(row[1])
+        return input, target
+
+    
+    def train_dataloader(self):
+        return DataLoader(
+            self.train_data,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=4,
+            collate_fn=self.collate_fn
+        )
+    
+    def val_dataloader(self):
+      return DataLoader(
+            self.val_data,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=4,
+            collate_fn=self.collate_fn
+        )
+    
+    def test_dataloader(self):
+      return DataLoader(
+            self.test_data,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=4,
+            collate_fn=self.collate_fn
+        )
+    
 
 def get_datasets():
     path = os.path.expanduser('~') + "/fasterrcnn/gtsrb/"
@@ -66,7 +122,8 @@ def get_dataloaders(num_classes, train_csv, test_csv):
     test_data = CustomImageDataset(num_classes, test_csv)
     train_sample_num = int(len(dataset) * 0.8)
     train_data, val_data = random_split(dataset, [train_sample_num,len(dataset) - train_sample_num], generator=torch.Generator().manual_seed(42))
-    train_dataloader = DataLoader(train_data, batch_size=8, shuffle=True, num_workers=4)
-    val_dataloader = DataLoader(val_data, batch_size=8, shuffle=False, num_workers=4)
-    test_dataloader = DataLoader(test_data, batch_size=8, shuffle=False, num_workers=4)
+    datamodule = CustomDataModule(train_data, val_data, test_data, 32)
+    train_dataloader = datamodule.train_dataloader()
+    val_dataloader = datamodule.val_dataloader()
+    test_dataloader = datamodule.test_dataloader()
     return train_dataloader, val_dataloader, test_dataloader

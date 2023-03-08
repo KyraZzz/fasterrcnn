@@ -9,6 +9,15 @@ from models_util import FasterRCNN, FreezeFasterRCNN
 from plot_utils import plot_metrics
 
 def run(args):
+    print(f"Parameter list: {chr(10)} \
+    task name: {args.task_name}{chr(10)} \
+    model name: {args.model}{chr(10)} \
+    learning rate: {args.lr}{chr(10)} \
+    maximum epochs: {args.num_epochs}{chr(10)} \
+    number of gpu devices: {args.num_gpu_devices}{chr(10)} \
+    log every n steps: {args.log_every_n_steps}{chr(10)} \
+    freeze depth: {args.freeze_depth}{chr(10)} \
+    ")
     log_dir = os.path.expanduser('~') + "/fasterrcnn/tb_logs"
     logger = TensorBoardLogger(log_dir, name=args.task_name)
     now = datetime.datetime.now()

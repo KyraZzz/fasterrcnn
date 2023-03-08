@@ -22,4 +22,4 @@ python3 run.py \
     --num_epochs 10 \
     --lr 1e-3 \
     --num_gpu_devices ${gpu} \
-    --freeze_depth 8
+    --freeze_depth 4
