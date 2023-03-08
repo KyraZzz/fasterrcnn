@@ -61,7 +61,8 @@ def get_datasets():
     return meta_csv, train_csv, test_csv, num_classes
 
 def get_dataloaders(num_classes, train_csv, test_csv):
-    dataset = CustomImageDataset(num_classes, train_csv)
+    path = os.path.expanduser('~') + "/fasterrcnn/gtsrb"
+    dataset = CustomImageDataset(num_classes, train_csv, imgs_path=path)
     test_data = CustomImageDataset(num_classes, test_csv)
     train_sample_num = int(len(dataset) * 0.8)
     train_data, val_data = random_split(dataset, [train_sample_num,len(dataset) - train_sample_num], generator=torch.Generator().manual_seed(42))
