@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from torch.nn import CrossEntropyLoss
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 import time
+import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import LinearLR
 
