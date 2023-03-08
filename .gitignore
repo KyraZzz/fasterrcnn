@@ -1,3 +1,4 @@
 **/gtsrb
 experiments/**/[slurm]*.out
 __pycache__/**
+tb_logs/**
