@@ -24,82 +24,63 @@ class FasterRCNN(pl.LightningModule):
     # optimiser settings
     self.lr = lr
     self.step_size = 1
+    self.save_hyperparameters()
   
   def forward(self, x, y=None):
     return self.model(x, y)
   
   def training_step(self, batch, batch_idx):
     x, y = batch
-    # convert the data into an expected format
-    # targets = [{'boxes': y[0][i].unsqueeze(0), 'labels': y[1][i]} for i in range(x.shape[0])]
-    # x = [image for image in x]
     # get model output: a dictionary of losses
     output = self.forward(x, y)
     # compute cumulative loss
     loss = torch.sum(torch.stack([loss for loss in output.values()],dim=0), dim=0)
-    self.log('train_loss', loss)
+    self.log('train_loss', loss, prog_bar=True, logger=True, sync_dist=True)
     return {'loss': loss}
   
   def validation_step(self, batch, batch_idx):
     x, y = batch
-    # convert the data into an expected format
-    # targets = [{'boxes': y[0][i].unsqueeze(0), 'labels': y[1][i]} for i in range(x.shape[0])]
-    # x = [image for image in x]
-    # in training mode, compute validation loss
-    # with torch.no_grad():
-    #   self.model.train()
-    #   output = self(x, targets)
-    #   loss = sum(loss for loss in output.values())
-    #   self.log('val_loss', loss)
-    # in inference mode, get post-processed predictions 
-    # with torch.no_grad():
-    #   self.model.eval()
-    # output contains List[Dict[Tensor]], one for each image
-    #        including predicted bounding boxes, predicted labels and scores
-    output = self.forward(x, y)
-    scores = [torch.mean(out['scores']) for out in output]
-    score = torch.mean(torch.stack(scores))
-    # compute mAP for each batch
-    self.mAP.update(output, y)
-    mAP = self.mAP.compute()['map']
-    self.log('mAP', mAP, on_step=True, on_epoch=True)
-    return {'val_score': score, 'mAP': mAP}
+    # compute loss, model only output loss when not in inference mode
+    with torch.no_grad():
+      self.model.train()
+      output = self.forward(x, y)
+      loss = torch.sum(torch.stack([loss for loss in output.values()],dim=0), dim=0)
+      self.log('val_loss', loss, prog_bar=True, logger=True, sync_dist=True)
+    return {'val_loss': loss}
   
   def test_step(self, batch, batch_idx):
     x, y = batch
-    # convert the data into an expected format
-    # targets = [{'boxes': y[0][i].unsqueeze(0), 'labels': y[1][i]} for i in range(x.shape[0])]
-    # x = [image for image in x]
     # output contains List[Dict[Tensor]], one for each image
     #        including predicted bounding boxes, predicted labels and scores
     output = self.forward(x, y)
     scores = [torch.mean(out['scores']) for out in output]
     score = torch.mean(torch.stack(scores))
+    self.log('test_score', score, prog_bar=True, logger=True, sync_dist=True)
     # compute mAP for each batch
     self.mAP.update(output, y)
-    mAP = self.mAP.compute()['map']
-    self.log('mAP', mAP, on_step=True, on_epoch=True)
-    return {'test_score': score, 'mAP': mAP}
+    return {'test_score': score}
   
   def on_train_epoch_start(self):
     # start time of each epoch
     self.start_time = time.time()
   
+  def test_epoch_end(self):
+    mAP = self.mAP.compute()['map']
+    self.log('mAP', mAP, logger=True, sync_dist=True)
+    return {'mAP': mAP}
+  
   def training_epoch_end(self, outputs):
     # compute the time taken for each epoch
     epoch_time = time.time() - self.start_time
-    self.log(f'time_epoch_{self.current_epoch}', epoch_time)
+    self.log('time_epoch', epoch_time, prog_bar=True, logger=True, sync_dist=True)
     # record the train epoch loss
     train_loss_epoch = outputs[-1]['loss']
-    self.log(f'train_loss_epoch_{self.current_epoch}', train_loss_epoch)
+    self.log('train_loss_epoch', train_loss_epoch, prog_bar=True, logger=True, sync_dist=True)
   
   def validation_epoch_end(self, outputs):
     # record the validation epoch loss
-    val_score_epoch = outputs[-1]['val_score']
-    # record the validation map
-    map_epoch = outputs[-1]['mAP']
-    self.log(f'val_score_epoch_{self.current_epoch}', val_score_epoch)
-    self.log(f'map_epoch_{self.current_epoch}', map_epoch)
+    val_score_epoch = outputs[-1]['val_loss']
+    self.log('val_loss_epoch', val_score_epoch, prog_bar=True, logger=True, sync_dist=True)
   
   def configure_optimizers(self):
     # Adam optimiser with customised learning rate
@@ -128,3 +109,4 @@ class FreezeFasterRCNN(FasterRCNN):
     in_features = self.model.roi_heads.box_predictor.cls_score.in_features
     # define a new head for the detector with required number of classes
     self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    self.save_hyperparameters()
