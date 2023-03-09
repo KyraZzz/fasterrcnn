@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --time=24:00:00
-#SBATCH --job-name=8freeze4
-#SBATCH --gres=gpu:8
+#SBATCH --job-name=1bf5
+#SBATCH --gres=gpu:4
 
 # run the application
 . /etc/profile.d/modules.sh                                   # Leave this line (enables the module command)
@@ -10,17 +10,16 @@ module purge                                                  # Removes all modu
 source /jmain02/apps/python3/anaconda3/etc/profile.d/conda.sh # enable conda
 conda activate fasterrcnn-env                                 # activate target env
 
-task="freeze4"
+task="freeze5"
 model="Freeze"
-gpu=8
+gpu=4
+seed=100
 
 cd /jmain02/home/J2AD015/axf03/yxz79-axf03/fasterrcnn
 python3 run.py \
-    --task_name ${task}"-"${model}"-gpu-"${gpu} \
+    --random_seed ${seed} \
+    --task_name ${task}"-"${model}"-gpu-"${gpu}"-seed-"${seed} \
     --model ${model} \
     --do_train \
-    --log_every_n_steps 20 \
-    --num_epochs 10 \
-    --lr 1e-3 \
     --num_gpu_devices ${gpu} \
-    --freeze_depth 4
+    --freeze_depth 5

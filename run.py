@@ -95,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type = float, default=1e-3, help="Learning rate")
     parser.add_argument("--num_epochs", type = int, default=10, help="Max number of epochs")
     parser.add_argument("--model", type = str, default="FasterRCNN", help="The model name")
-    parser.add_argument("--freeze_depth", type = int, default=None, help="Freeze up to and including i th layer")
+    parser.add_argument("--freeze_depth", type = int, default=0, help="Freeze up i th layer")
     parser.add_argument("--log_every_n_steps", type = int, default=20, help="Log every n steps for logging")
     parser.add_argument("--num_gpu_devices", type = int, default=1, help="Number of GPU")
     parser.add_argument("--do_train", action = "store_true", help = "Whether enable model training")

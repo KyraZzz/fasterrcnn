@@ -90,7 +90,7 @@ class FasterRCNN(pl.LightningModule):
 
 # freeze the entire backbone network and train the classification layer from scratch on GTSRB dataset
 class FreezeFasterRCNN(FasterRCNN):
-  """ Freeze the backbone network up to and including K layers
+  """ Freeze the backbone network up to K layers
       where K = freeze_depth, fine-tune the rest layers
       layers_to_freeze = ['conv1', 'layer1', 'layer2', 'layer3', 'layer4'][:freeze_depth]
   """
