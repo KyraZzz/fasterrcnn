@@ -14,12 +14,11 @@ class FasterRCNN(pl.LightningModule):
   def __init__(self, num_classes, lr=1e-3):
     super().__init__()
     # load the fasterrcnn model without pre-trained weights 
-    self.model = fasterrcnn_resnet50_fpn(pretrain=False)
+    self.model = fasterrcnn_resnet50_fpn(pretrain=None)
     # update the classifier layer for required number of classes
     in_features = self.model.roi_heads.box_predictor.cls_score.in_features
     self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-    # loss and mAP metrics
-    self.metrics = CrossEntropyLoss()
+    # mAP metrics
     self.mAP = MeanAveragePrecision()
     # optimiser settings
     self.lr = lr
@@ -74,14 +73,14 @@ class FasterRCNN(pl.LightningModule):
     epoch_time = time.time() - self.start_time
     self.log('time_epoch', epoch_time, prog_bar=True, logger=True, sync_dist=True)
     # record the train epoch loss
-    train_loss_epoch = outputs[-1]['loss']
-    self.log('train_loss_epoch', train_loss_epoch, prog_bar=True, logger=True, sync_dist=True)
+    train_loss_epoch = sum(output['loss'].mean() for output in outputs) / len(outputs)
+    self.log('train_loss_epoch', train_loss_epoch.item(), prog_bar=True, logger=True, sync_dist=True)
   
   def validation_epoch_end(self, outputs):
     # record the validation epoch loss
-    val_score_epoch = outputs[-1]['val_loss']
-    self.log('val_loss_epoch', val_score_epoch, prog_bar=True, logger=True, sync_dist=True)
-  
+    val_loss_epoch = sum(output['val_loss'].mean() for output in outputs) / len(outputs)
+    self.log('val_loss_epoch', val_loss_epoch.item(), prog_bar=True, logger=True, sync_dist=True)
+    
   def configure_optimizers(self):
     # Adam optimiser with customised learning rate
     optimiser = Adam(self.parameters(), lr=self.lr)
