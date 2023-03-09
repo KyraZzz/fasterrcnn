@@ -14,7 +14,7 @@ class FasterRCNN(pl.LightningModule):
   def __init__(self, num_classes, lr=1e-3):
     super().__init__()
     # load the fasterrcnn model without pre-trained weights 
-    self.model = fasterrcnn_resnet50_fpn(pretrain=False, num_classes=num_classes)
+    self.model = fasterrcnn_resnet50_fpn(pretrain=False)
     # update the classifier layer for required number of classes
     in_features = self.model.roi_heads.box_predictor.cls_score.in_features
     self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -40,8 +40,8 @@ class FasterRCNN(pl.LightningModule):
   
   def validation_step(self, batch, batch_idx):
     x, y = batch
-    # compute loss, model only output loss when not in inference mode
     with torch.no_grad():
+      # compute loss, model only output loss when not in inference mode
       self.model.train()
       output = self.forward(x, y)
       loss = torch.sum(torch.stack([loss for loss in output.values()],dim=0), dim=0)
@@ -52,7 +52,7 @@ class FasterRCNN(pl.LightningModule):
     x, y = batch
     # output contains List[Dict[Tensor]], one for each image
     #        including predicted bounding boxes, predicted labels and scores
-    output = self.forward(x, y)
+    output = self.forward(x)
     scores = [torch.mean(out['scores']) for out in output]
     score = torch.mean(torch.stack(scores))
     self.log('test_score', score, prog_bar=True, logger=True, sync_dist=True)
@@ -64,7 +64,7 @@ class FasterRCNN(pl.LightningModule):
     # start time of each epoch
     self.start_time = time.time()
   
-  def test_epoch_end(self):
+  def test_epoch_end(self, outputs):
     mAP = self.mAP.compute()['map']
     self.log('mAP', mAP, logger=True, sync_dist=True)
     return {'mAP': mAP}

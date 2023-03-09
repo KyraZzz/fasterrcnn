@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --nodes=1
-#SBATCH --time=1:00:00
-#SBATCH --job-name=8scratch
-#SBATCH --gres=gpu:1
+#SBATCH --time=24:00:00
+#SBATCH --job-name=8freeze4
+#SBATCH --gres=gpu:8
 
 # run the application
 . /etc/profile.d/modules.sh                                   # Leave this line (enables the module command)
@@ -12,14 +12,13 @@ conda activate fasterrcnn-env                                 # activate target 
 
 task="freeze4"
 model="Freeze"
-gpu=1
+gpu=8
 
 cd /jmain02/home/J2AD015/axf03/yxz79-axf03/fasterrcnn
 python3 run.py \
     --task_name ${task}"-"${model}"-gpu-"${gpu} \
     --model ${model} \
-    --do_test \
-    --ckpt_path "/jmain02/home/J2AD015/axf03/yxz79-axf03/fasterrcnn/checkpoints/3-8/freeze4-Freeze-gpu-8/freeze4-Freeze-gpu-8-date=3-8-epoch=03-val_loss=0.06.ckpt" \
+    --do_train \
     --log_every_n_steps 20 \
     --num_epochs 10 \
     --lr 1e-3 \
