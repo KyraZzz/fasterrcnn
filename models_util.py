@@ -92,18 +92,24 @@ class FasterRCNN(pl.LightningModule):
 class FreezeFasterRCNN(FasterRCNN):
   """ Freeze the backbone network up to and including K layers
       where K = freeze_depth, fine-tune the rest layers
+      layers_to_freeze = ['conv1', 'layer1', 'layer2', 'layer3', 'layer4'][:freeze_depth]
   """
-  def __init__(self, num_classes, freeze_depth=None, lr=1e-3):
+  def __init__(self, num_classes, freeze_depth=0, lr=1e-3):
     super().__init__(num_classes, lr)
-    self.model = fasterrcnn_resnet50_fpn(pretrain=True)
     # freeze the backbone network 
+    max_freeze_depth = 5
+    assert freeze_depth >= 0 and freeze_depth <= max_freeze_depth
     self.freeze_depth = freeze_depth
-    if self.freeze_depth is not None:
-      self.freeze_depth = min(freeze_depth, len(self.model.backbone.fpn.inner_blocks))
-      for name, param in self.model.backbone.body.named_parameters():
-        if f'layer{self.freeze_depth+1}' in name:
-          break
-        param.requires_grad = False
+    self.model = fasterrcnn_resnet50_fpn(weights='DEFAULT', trainable_backbone_layers=5-self.freeze_depth)
+    # check parameters are frozen
+    layer_names = ['conv1', 'layer1', 'layer2', 'layer3', 'layer4']
+    for idx, layer in enumerate(layer_names):
+      for param in self.model.backbone.body[layer].parameters():
+        if idx < self.freeze_depth:
+          assert param.requires_grad == False
+        else:
+          assert param.requires_grad == True
+
     # get the number of input features 
     in_features = self.model.roi_heads.box_predictor.cls_score.in_features
     # define a new head for the detector with required number of classes
