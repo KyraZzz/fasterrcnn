@@ -10,6 +10,7 @@ from plot_utils import plot_metrics
 
 def run(args):
     print(f"Parameter list: {chr(10)} \
+    random seed: {args.random_seed}{chr(10)} \
     task name: {args.task_name}{chr(10)} \
     model name: {args.model}{chr(10)} \
     learning rate: {args.lr}{chr(10)} \
@@ -21,6 +22,7 @@ def run(args):
     log every n steps: {args.log_every_n_steps}{chr(10)} \
     freeze depth: {args.freeze_depth}{chr(10)} \
     ")
+    pl.seed_everything(args.random_seed)
     log_dir = os.path.expanduser('~') + "/fasterrcnn/tb_logs"
     logger = TensorBoardLogger(log_dir, name=args.task_name)
     now = datetime.datetime.now()
@@ -29,11 +31,11 @@ def run(args):
         filename = f"{args.task_name}-date={now.month}-{now.day}"+"-{epoch:02d}-{val_loss:.2f}",
         verbose = True,
         save_top_k = 1,
-        monitor = "val_loss",
+        monitor = "val_loss_epoch",
         mode = "min"
     )
     early_stop_callback = EarlyStopping(
-        monitor='val_loss',
+        monitor='val_loss_epoch',
         min_delta=0.001,
         patience=2,
         verbose=True,
@@ -84,11 +86,11 @@ def run(args):
     if args.do_train:
         trainer.fit(model, train_dataloader, val_dataloader)
     if args.do_test:
-        trainer.test(model, verbose = True, dataloaders = test_dataloader)
+        trainer.test(model, test_dataloader)
 
 if __name__ == "__main__":
-    pl.seed_everything(42)
     parser = argparse.ArgumentParser()
+    parser.add_argument("--random_seed", type = int, default=42, help="Max number of epochs")
     parser.add_argument("--task_name", type = str, required = True, help = "Task name")
     parser.add_argument("--lr", type = float, default=1e-3, help="Learning rate")
     parser.add_argument("--num_epochs", type = int, default=10, help="Max number of epochs")
