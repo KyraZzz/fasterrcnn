@@ -3,3 +3,4 @@ experiments/**/[slurm]*.out
 __pycache__/**
 tb_logs/**
 checkpoints/**
+new.zip

@@ -8,16 +8,13 @@ import torch
 from torch.optim import Adam
 from torch.optim.lr_scheduler import LinearLR
 
-class FasterRCNN(pl.LightningModule):
-  """ Train Faster R-CNN from scratch
+class BaseFasterRCNN(pl.LightningModule):
+  """ Base class without concrete model
   """
   def __init__(self, num_classes, lr=1e-3):
     super().__init__()
-    # load the fasterrcnn model without pre-trained weights 
-    self.model = fasterrcnn_resnet50_fpn(pretrain=None)
-    # update the classifier layer for required number of classes
-    in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-    self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+    # load the fasterrcnn model without pre-trained weights
+    self.model = None
     # mAP metrics
     self.mAP = MeanAveragePrecision()
     # optimiser settings
@@ -78,8 +75,8 @@ class FasterRCNN(pl.LightningModule):
   
   def validation_epoch_end(self, outputs):
     # record the validation epoch loss
-    val_loss_epoch = sum(output['val_loss'].mean() for output in outputs) / len(outputs)
-    self.log('val_loss_epoch', val_loss_epoch.item(), prog_bar=True, logger=True, sync_dist=True)
+    val_score_epoch = sum(output['val_loss'].mean() for output in outputs) / len(outputs)
+    self.log('val_loss_epoch', val_score_epoch.item(), prog_bar=True, logger=True, sync_dist=True)
     
   def configure_optimizers(self):
     # Adam optimiser with customised learning rate
@@ -88,8 +85,19 @@ class FasterRCNN(pl.LightningModule):
     scheduler = LinearLR(optimiser, self.step_size)
     return [optimiser], [scheduler]
 
+class ScratchFasterRCNN(BaseFasterRCNN):
+  """ Train Faster R-CNN from scratch
+  """
+  def __init__(self, num_classes, lr=1e-3):
+    super().__init__(num_classes, lr)
+    # load the fasterrcnn model without pre-trained weights
+    self.model = fasterrcnn_resnet50_fpn(pretrain=None)
+    # update the classifier layer for required number of classes
+    in_features = self.model.roi_heads.box_predictor.cls_score.in_features
+    self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
 # freeze the entire backbone network and train the classification layer from scratch on GTSRB dataset
-class FreezeFasterRCNN(FasterRCNN):
+class FreezeFasterRCNN(BaseFasterRCNN):
   """ Freeze the backbone network up to K layers
       where K = freeze_depth, fine-tune the rest layers
       layers_to_freeze = ['conv1', 'layer1', 'layer2', 'layer3', 'layer4'][:freeze_depth]

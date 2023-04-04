@@ -5,7 +5,7 @@ import argparse
 import os
 import datetime
 from datasets_util import get_dataloaders, get_datasets
-from models_util import FasterRCNN, FreezeFasterRCNN
+from models_util import ScratchFasterRCNN, FreezeFasterRCNN
 from plot_utils import plot_metrics
 
 def run(args):
@@ -52,9 +52,9 @@ def run(args):
     match args.model:
         case "FasterRCNN":
             if args.ckpt_path is not None:
-                model = FasterRCNN.load_from_checkpoint(args.ckpt_path)
+                model = ScratchFasterRCNN.load_from_checkpoint(args.ckpt_path)
             else:
-                model = FasterRCNN(num_classes, args.lr)
+                model = ScratchFasterRCNN(num_classes, args.lr)
         case "Freeze":
             if args.ckpt_path is not None:
                 model = FreezeFasterRCNN.load_from_checkpoint(args.ckpt_path)
